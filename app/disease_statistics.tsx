@@ -36,7 +36,7 @@ export default function DiseaseStatisticsScreen() {
       setLoading(true);
       try {
         // IMPORTANT: Replace with your actual local IP address!
-        const API_URL = "http://192.168.1.2:8000/predict_12_months"; 
+        const API_URL = "https://predictcare-backend.onrender.com/predict_12_months"; 
         
         const response = await axios.post(API_URL, {
           province: selectedProvince,

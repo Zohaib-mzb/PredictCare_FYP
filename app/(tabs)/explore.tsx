@@ -9,8 +9,8 @@ import { auth } from '../../firebaseConfig';
 
 const screenWidth = Dimensions.get("window").width;
 
-// REPLACE THIS WITH YOUR ACTUAL LOCAL IP ADDRESS
-const API_URL = "http://192.168.1.2:8000/predict";
+// --- CHANGED LINE HERE: Pointing to your live Render backend ---
+const API_URL = "https://predictcare-backend.onrender.com/predict";
 
 interface DiseasePrediction {
   dates: string[];
