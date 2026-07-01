@@ -12,7 +12,10 @@ from datetime import datetime, timedelta
 # Global variables to hold our Dual-Engine AI
 seasonal_model = None
 pandemic_model = None
-MODEL_PATH = "predictcare_v2.pkl" 
+
+# --- FIXED FOR RENDER: Dynamic Relative Path Discovery ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "predictcare_v2.pkl") 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -36,7 +39,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="PredictCare AI Forecast API",
     description="Production API for 7-Day Disease Outbreak Forecasting (Weather-Driven)",
-    version="3.1.0", # Bumped version for the new business logic!
+    version="3.1.0", 
     lifespan=lifespan
 )
 
@@ -142,7 +145,6 @@ def predict_7_days(payload: PredictionRequest):
             dates_list.append(current_day.strftime("%a"))
             
             # Add slight realistic variance (± 15%)
-            # If current_cases is 0 (like COVID), variance math keeps it exactly at 0!
             variance = random.uniform(-0.15, 0.15)
             daily_cases = max(0, int(current_cases + (current_cases * variance)))
             predictions_list.append(daily_cases)
@@ -159,13 +161,13 @@ def predict_7_days(payload: PredictionRequest):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
-# --- CORRECTED: 12-MONTH PREDICTION ENDPOINT (1 City Per Province) ---
+
+# --- 12-MONTH PREDICTION ENDPOINT ---
 class Prediction12MonthRequest(BaseModel):
     province: str
     city: str
     disease: str
 
-# Only including the main cities to maintain data integrity
 CITY_POP_MAP = {
     "Karachi": 8825, 
     "Lahore": 6318, 
@@ -188,7 +190,7 @@ def predict_12_months(payload: Prediction12MonthRequest):
         target_date = today + timedelta(days=30 * i)
         target_year = target_date.year
         target_month = target_date.month
-        months_list.append(target_date.strftime("%b")) # e.g., "Jan", "Feb"
+        months_list.append(target_date.strftime("%b")) 
         
         weather = get_current_weather(target_month)
         pop = CITY_POP_MAP.get(payload.city, 1000)
@@ -223,5 +225,6 @@ def predict_12_months(payload: Prediction12MonthRequest):
         "city_name": payload.city,
         "cases": cases_list
     }
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
