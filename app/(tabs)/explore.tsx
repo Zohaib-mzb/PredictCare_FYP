@@ -9,7 +9,6 @@ import { auth } from '../../firebaseConfig';
 
 const screenWidth = Dimensions.get("window").width;
 
-// --- CHANGED LINE HERE: Pointing to your live Render backend ---
 const API_URL = "https://predictcare-backend.onrender.com/predict";
 
 interface DiseasePrediction {

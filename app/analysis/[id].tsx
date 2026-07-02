@@ -1,9 +1,9 @@
 import { FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import axios from 'axios';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Dimensions, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { ActivityIndicator, Dimensions, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import axios from 'axios';
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -71,7 +71,7 @@ export default function AnalysisScreen() {
   useEffect(() => {
     const fetchDetailedAnalysis = async () => {
       try {
-        const API_URL = "http://192.168.1.2:8000/predict";
+        const API_URL = "https://predictcare-backend.onrender.com/predict";
         const regions = ["Punjab", "Sindh", "Balochistan", "Khyber Pakhtunkhwa", "Pakistan (National)"];
         
         const promises = regions.map(region => 
