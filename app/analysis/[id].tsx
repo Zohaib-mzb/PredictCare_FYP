@@ -26,7 +26,7 @@ export default function AnalysisScreen() {
     ? 'COVID-19' 
     : diseaseKey.charAt(0).toUpperCase() + diseaseKey.slice(1);
 
-  // --- STATIC DATABASE ---
+  // --- STATIC DATABASE (ICONS & DOCTORS) ---
   const allData: any = {
     "dengue": {
       icon: <MaterialCommunityIcons name="virus" size={24} color="#0F2C4A" />,
@@ -65,13 +65,16 @@ export default function AnalysisScreen() {
   const [chartData, setChartData] = useState<any>(null);
   
   // State for the interactive graph tooltip
-  const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0, value: 0, region: '', week: '' });
+  const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0, value: 0, region: '', date: '' });
 
   // --- FETCH REAL-TIME DATA ---
   useEffect(() => {
     const fetchDetailedAnalysis = async () => {
       try {
+        setLoading(true);
         const API_URL = "https://predictcare-backend.onrender.com/predict";
+        
+        // Fetch data for all major regions
         const regions = ["Punjab", "Sindh", "Balochistan", "Khyber Pakhtunkhwa", "Pakistan (National)"];
         
         const promises = regions.map(region => 
@@ -83,54 +86,69 @@ export default function AnalysisScreen() {
         let highestTotal = -1;
         let highestRegionIndex = 0;
         let chartDatasets: any[] = [];
-        let labels = ["Week 1", "Week 2", "Week 3", "Week 4"]; // Switched to Weeks!
-        let punjabMonthly = 0;
+        let labels: string[] = []; 
+        let nationalMonthly = 0;
 
         responses.forEach((res, index) => {
           if (res && res.data) {
             const regionName = regions[index];
+            const dates = res.data.forecast_dates;
             const cases = res.data.forecast_cases; 
             
-            // AI gives 7 days. We sum it to get a Weekly Baseline.
-            const weeklyBaseline = cases.reduce((a: number, b: number) => a + b, 0);
+            // Set labels from the first successful response (usually 7 days)
+            if (labels.length === 0) {
+              labels = dates;
+            }
 
-            if (weeklyBaseline > highestTotal) {
-              highestTotal = weeklyBaseline;
+            // Calculate total cases for the 7-day period
+            const total7Days = cases.reduce((a: number, b: number) => a + b, 0);
+
+            // Find the highest region (excluding National)
+            if (regionName !== "Pakistan (National)" && total7Days > highestTotal) {
+              highestTotal = total7Days;
               highestRegionIndex = index;
             }
 
-            if (regionName === "Punjab") punjabMonthly = Math.floor((weeklyBaseline / 7) * 30);
-
-            const weekData = [];
-            let currentWeekCases = weeklyBaseline;
-            for(let i=0; i<4; i++) {
-              const variance = 1 + (Math.random() * 0.2 - 0.1); // +/- 10% change week over week
-              let projectedWeek = Math.floor(currentWeekCases * variance);
-              weekData.push(Math.max(0, projectedWeek));
+            // Calculate estimated monthly cases based on National data
+            if (regionName === "Pakistan (National)") {
+                nationalMonthly = Math.floor((total7Days / 7) * 30);
             }
 
-            const safeCases = weekData.every(v => v === 0) ? [0.1, 0.1, 0.1, 0.1] : weekData;
+            // Sanitize cases (if all are 0, chart kit needs 0.1 to render properly)
+            const safeCases = cases.every((v: number) => v === 0) 
+              ? cases.map(() => 0.1) 
+              : cases;
 
             chartDatasets.push({
               data: safeCases,
               name: regionName,
-              color: (opacity = 1) => REGION_COLORS[regionName], // Use specific color
+              color: (opacity = 1) => REGION_COLORS[regionName] || "#000",
               strokeWidth: 3
             });
           }
         });
 
         if (chartDatasets.length > 0) {
-          const topRegionName = chartDatasets[highestRegionIndex].name;
-          const baseMonthly = punjabMonthly > 0 ? punjabMonthly : Math.floor((highestTotal / 7) * 30);
+          const topRegionName = regions[highestRegionIndex];
+          const baseMonthly = nationalMonthly > 0 ? nationalMonthly : Math.floor((highestTotal / 7) * 30);
           
+          // Basic trend logic
           const trendMultiplier = formattedDisease === 'COVID-19' ? 0.9 : 1.15; 
           const nextMonthPredicted = Math.floor(baseMonthly * trendMultiplier);
 
+          // Risk Level calculation
           let riskLvl = "Low";
           let riskCol = "#27AE60"; // Green
-          if (baseMonthly > 15000) { riskLvl = "High"; riskCol = "#E74C3C"; } // Red
-          else if (baseMonthly > 5000) { riskLvl = "Moderate"; riskCol = "#F39C12"; } // Orange
+          
+          // Adjust thresholds based on the disease for realism
+          if (formattedDisease === 'COVID-19' && baseMonthly === 0) {
+             riskLvl = "Zero Risk";
+             riskCol = "#3498DB"; // Blue
+          } else if (baseMonthly > 15000) { 
+             riskLvl = "High"; riskCol = "#E74C3C"; // Red
+          } else if (baseMonthly > 5000) { 
+             riskLvl = "Moderate"; riskCol = "#F39C12"; // Orange
+          }
 
           setLiveStats({
             thisMonth: baseMonthly,
@@ -138,29 +156,31 @@ export default function AnalysisScreen() {
             risk: riskLvl,
             riskColor: riskCol,
             topRegion: topRegionName,
-            aiText: `Based on live AI environmental modeling, ${formattedDisease} is showing a ${riskLvl.toLowerCase()} risk trajectory. We estimate ${baseMonthly.toLocaleString()} total cases this month. Due to seasonal patterns, the AI forecasts approximately ${nextMonthPredicted.toLocaleString()} cases next month. Currently, ${topRegionName} remains the highest risk zone.`
+            aiText: `Based on live AI environmental modeling, ${formattedDisease} is showing a ${riskLvl.toLowerCase()} risk trajectory. We estimate ${baseMonthly.toLocaleString()} total cases nationally this month. Due to seasonal patterns, the AI forecasts approximately ${nextMonthPredicted.toLocaleString()} cases next month. Currently, ${topRegionName} remains the highest risk provincial zone.`
           });
 
           setChartData({
             labels: labels,
             datasets: chartDatasets,
-            legend: [] // We hide the default legend to build our own custom one!
+            legend: [] // Custom legend used
           });
         }
-        setLoading(false);
       } catch (error) {
         console.error("Error fetching analysis:", error);
+      } finally {
         setLoading(false);
       }
     };
 
-    fetchDetailedAnalysis();
+    if (diseaseKey) {
+        fetchDetailedAnalysis();
+    }
   }, [diseaseKey]);
 
   // Handler for clicking a dot on the graph
   const handleDataPointClick = (data: any) => {
     const regionName = data.dataset.name || 'Region';
-    const weekName = chartData.labels[data.index];
+    const dateName = chartData.labels[data.index];
 
     setTooltip({
       visible: true,
@@ -168,7 +188,7 @@ export default function AnalysisScreen() {
       y: data.y,
       value: data.value,
       region: regionName,
-      week: weekName
+      date: dateName
     });
     
     // Auto hide tooltip after 3 seconds
@@ -206,7 +226,7 @@ export default function AnalysisScreen() {
               
               <View style={styles.statsRow}>
                 <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>This Month</Text>
+                  <Text style={styles.statLabel}>This Month (Nat.)</Text>
                   <Text style={styles.statValue}>{liveStats.thisMonth.toLocaleString()}</Text>
                 </View>
                 <View style={styles.statItem}>
@@ -227,7 +247,7 @@ export default function AnalysisScreen() {
               <View style={styles.card}>
                 <View style={styles.cardHeader}>
                   <MaterialCommunityIcons name="chart-multiline" size={28} color="#0F2C4A" />
-                  <Text style={styles.cardTitle}>4-Week Provincial Forecast</Text>
+                  <Text style={styles.cardTitle}>7-Day Provincial Forecast</Text>
                 </View>
                 
                 <View style={{ position: 'relative' }}>
@@ -251,10 +271,13 @@ export default function AnalysisScreen() {
 
                   {/* INTERACTIVE POPUP BOX */}
                   {tooltip.visible && (
-                    <View style={[styles.tooltipBox, { left: Math.max(0, tooltip.x - 60), top: Math.max(0, tooltip.y - 75) }]}>
+                    <View style={[styles.tooltipBox, { 
+                        left: tooltip.x > (screenWidth / 2) ? tooltip.x - 140 : tooltip.x + 10, 
+                        top: Math.max(0, tooltip.y - 75) 
+                    }]}>
                       <Text style={styles.toolRegion}>{tooltip.region}</Text>
                       <Text style={styles.toolCases}>{Math.round(tooltip.value)} Cases</Text>
-                      <Text style={styles.toolDay}>in {tooltip.week}</Text>
+                      <Text style={styles.toolDay}>on {tooltip.date}</Text>
                     </View>
                   )}
                 </View>
@@ -346,7 +369,7 @@ const styles = StyleSheet.create({
   mainChart: { marginLeft: -15, borderRadius: 12 },
   tooltipBox: { 
     position: 'absolute', backgroundColor: 'rgba(15, 44, 74, 0.95)', 
-    padding: 10, borderRadius: 8, width: 130, alignItems: 'center', zIndex: 100 
+    padding: 10, borderRadius: 8, width: 140, alignItems: 'center', zIndex: 100 
   },
   toolRegion: { color: '#FFF', fontSize: 12, fontWeight: 'bold', marginBottom: 2, textAlign: 'center' },
   toolCases: { color: '#E74C3C', fontSize: 15, fontWeight: '900' },
