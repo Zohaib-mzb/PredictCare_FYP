@@ -4,7 +4,7 @@ A full-stack AI application that predicts early-stage diseases using machine lea
 Built as my Final Year Project (BS Computer Science).
 
 🔗 **Live Demo:** [predictcare-app.vercel.app](https://predictcare-app.vercel.app)  
-📡 **Backend API:** [Deployed on Render](your-render-url-here)
+📡 **Backend API:** [Deployed on Render](https://predictcare-backend.onrender.com)
 
 ---
 
