@@ -1,50 +1,66 @@
-# Welcome to your Expo app 👋
+# 🏥 PredictCare — Early Disease Detection & Management System
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A full-stack AI application that predicts early-stage diseases using machine learning. 
+Built as my Final Year Project (BS Computer Science).
 
-## Get started
+🔗 **Live Demo:** [predictcare-app.vercel.app](https://predictcare-app.vercel.app)  
+📡 **Backend API:** [Deployed on Render](your-render-url-here)
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## What it does
 
-2. Start the app
+Users enter their symptoms and health data into the mobile app. 
+The app sends this to a machine learning model which predicts whether 
+the user is at risk for specific diseases — returning results in real time.
 
-   ```bash
-   npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
+## Tech Stack
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+| Layer | Technology |
+|-------|-----------|
+| ML Model | Python · scikit-learn · Gradient Boosting |
+| Data Analysis | pandas · NumPy · Google Colab |
+| Backend API | FastAPI (Python) |
+| Frontend | React Native · TypeScript · Expo |
+| Database | MySQL |
+| Deployment | Render (backend) · Vercel (frontend) |
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+---
 
-## Get a fresh project
+## ML Model Details
 
-When you're ready, run:
+- **Dataset:** 10 years of historical health/disease data (synthetic, representing real-world patterns)
+- **Best performing model:** Gradient Boosting Classifier
+- **Training accuracy:** 98% on training set
+- **Note:** Model was trained on synthetic data due to real-world data availability constraints. 
+  Production use would require validation on real patient data and clinical review.
 
+---
+
+---
+
+## How to run locally
+
+**Backend:**
 ```bash
-npm run reset-project
+cd "backend predictcare"
+pip install -r requirements.txt
+uvicorn main:app --reload
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+**Frontend:**
+```bash
+npm install
+npx expo start
+```
 
-## Learn more
+---
 
-To learn more about developing your project with Expo, look at the following resources:
+## What I learned
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Building and evaluating multiple ML models (Random Forest, Gradient Boosting)
+- Deploying Python ML models as production REST APIs with FastAPI
+- Connecting a mobile frontend to a live ML backend
+- Working with synthetic datasets and understanding their limitations
